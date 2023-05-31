@@ -65,14 +65,23 @@
                 .then((json) => userBalloon(json.points))
         }
 
+        function errorAlert(id,text) {
+             document.getElementById(id).style.display='block';
+             document.getElementById(id).innerText=text;
+            setTimeout(function(){
+                document.getElementById(id).style.display='none';
+            }, 4000);
+            return false;
+        }
     </script>
 
-
+   <h4 id="error-alert-main" style="color: red"></h4>
 <div class="row mt-5">
     <ul class="list-group col-lg-5 col-sm-12" id="points">
         <li class="list-group-item" id="li-form">
             <form>
 {{--                @csrf--}}
+
                 <div class="mb-3">
                     <label for="latitude" class="form-label">Latitude</label>
                     <input type="text" class="form-control" id="latitude" placeholder="55.76" name="latitude" required>
@@ -118,7 +127,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-
+                    <h4 id="error-alert-edit" style="color: red"></h4>
                     <div class="mb-3">
                         <label for="latitude" class="form-label">Latitude</label>
                         <input type="text" class="form-control" id="latitude" placeholder="55.76" name="latitude" required>
@@ -161,12 +170,23 @@
                 },
                 body:JSON.stringify(obj)
             });
-
             const data = await res.json()
-            console.log(data)
-            clearInput()
-            renderMapPoint(obj,data.id)
-            renderPointLi(obj,data.id)
+            if(res.status===422){
+                // console.log(data)
+                errorAlert("error-alert-main","Input data is invalid")
+                console.log("Error "+ res.status )
+            }
+            else if(res.ok){
+                clearInput()
+                renderMapPoint(obj,data.id)
+                renderPointLi(obj,data.id)
+                // console.log(data)
+
+            }
+            else{
+                errorAlert("error-alert-main","Error "+ res.status)
+                console.log("Error "+ res.status )
+            }
 
         }
         function clearInput(){
@@ -210,7 +230,7 @@
         }
         async function deletePoint(point){
             let id = point.getAttribute('data-id');
-            point.closest('li').remove();
+            // point.closest('li').remove();
             let obj = { id:id };
             const res = await fetch('/delete_point/'+id, {
                 method:'DELETE',
@@ -221,10 +241,18 @@
                 },
                 body:JSON.stringify(obj)
             });
+            if(res.ok){
+                point.closest('li').remove();
+                const data = await res.json()
+                console.log(data)
+                deleteMapPoint(data.id)
+            }
+            else{
+                errorAlert("error-alert-main","Error "+ res.status)
+                console.log("Error "+ res.status )
+            }
 
-            const data = await res.json()
-            console.log(data)
-            deleteMapPoint(data.id)
+
         }
         function deleteMapPoint(id){
 
@@ -276,15 +304,24 @@
                 },
                 body:JSON.stringify(obj)
             });
-
             const data = await res.json()
-            console.log(data)
-            deleteMapPoint(id.value)
-            let point = document.querySelector(`button[data-id='${id.value}']`);
+            if(res.status===422){
+                errorAlert("error-alert-edit","Input data is invalid")
+                console.log("Error "+ res.status )
+            }
+            else if(res.ok) {
+                console.log(data)
+                deleteMapPoint(id.value)
+                let point = document.querySelector(`button[data-id='${id.value}']`);
                 point.getAttribute('data-id');
-            point.closest('li').remove();
-            renderMapPoint(obj,data.id)
-            renderPointLi(obj,data.id)
+                point.closest('li').remove();
+                renderMapPoint(obj, data.id)
+                renderPointLi(obj, data.id)
+            }
+            else{
+                errorAlert("error-alert-edit","Error "+ res.status)
+                console.log("Error "+res.status)
+            }
         }
 
     </script>
